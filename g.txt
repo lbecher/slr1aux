@@ -1,5 +1,35 @@
-S' -> T
-T -> F
-T -> T * F
-F -> id
-F -> ( T )
+S' -> S
+S -> A B
+S -> A B C
+A -> AbreBlocoDATA E FechaBlocoDATA
+B -> AbreBlocoMAIN H FechaBlocoMAIN
+C -> D
+C -> D C
+D -> AbreBlocoDeCodigo H FechaBlocoDeCodigo
+E -> F
+E -> F E
+F -> TipoDeVariavel DoisPontos G
+G -> IdDeVariavel PontoEVirgula
+G -> IdDeVariavel Virgula G
+H -> I
+H -> I H
+I -> AbreBlocoINZ IdDeVariavel DoisPontos H FechaBlocoINZ
+I -> AbreBlocoWNZ IdDeVariavel DoisPontos H FechaBlocoWNZ
+I -> AbreBlocoRUI IdDeVariavel Virgula M Virgula M DoisPontos H FechaBlocoRUI
+I -> Bloc DoisPontos IdDeBloco PontoEVirgula
+I -> Set DoisPontos IdDeVariavel Virgula K
+I -> Print DoisPontos String Virgula J
+I -> Scan DoisPontos String Virgula G
+J -> K
+J -> K Virgula J
+K -> IdDeVariavel PontoEVirgula
+K -> Caractere PontoEVirgula
+K -> Numero PontoEVirgula
+K -> String PontoEVirgula
+K -> L PontoEVirgula
+L -> Operador AbreParenteses M FechaParenteses
+L -> Operador AbreParenteses M Virgula M FechaParenteses
+M -> L
+M -> IdDeVariavel
+M -> Numero
+M -> Caractere
