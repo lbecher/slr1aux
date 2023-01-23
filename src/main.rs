@@ -153,7 +153,6 @@ impl Automato {
         let mut itens: Vec<ItemLR> = Vec::new();
         let mut transicoes: Vec<Transicao> = Vec::new();
 
-
         // adiciona as produções iniciais ao vetor de itens
         for producao in producoes_iniciais.to_owned() {
             itens.push(self.converte_para_item(producao, posicao_do_ponto));
@@ -212,8 +211,7 @@ impl Automato {
             tamanho_vetor_transicoes = transicoes.len();
         }
 
-
-        //
+        // registra transições no vetor
         let mut transicoes_index: Vec<usize> = Vec::new();
         let transicoes_tamanho_anterior = self.transicoes.len();
         contador = 0;
@@ -236,9 +234,6 @@ impl Automato {
             transicoes: transicoes_index.to_vec(),
         };
         self.estados.push(estado);
-
-        println!("{:?}", self.estados);
-        println!("{:?}\n", self.transicoes);
 
         // gera estados sobre novas transições
         for transicao in transicoes_index.to_vec() {
