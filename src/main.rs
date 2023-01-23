@@ -77,6 +77,7 @@ fn main() {
     let mut automato = Automato::inicializa(gramatica);
     automato.analiza();
     automato.resultado();
+    automato.gera_tabela_md();
 }
 
 fn obtem_regras_de_producao(linhas_arquivo: Vec<&str>) -> Vec<RegraDeProducao> {
@@ -289,6 +290,54 @@ impl Automato {
     fn printa_transicoes(&self, estado: usize) {
         for transicao in self.estados[estado].transicoes.to_vec() {
             println!("δ(I{}, {}) = I{}", estado, self.transicoes[transicao].simbolo, self.obtem_destino(self.transicoes[transicao].clone()));
+        }
+    }
+
+    fn cabecalho_md(&self) -> String {
+        let mut string1: String = "| Estado ".to_string();
+        let mut string2: String = "|---".to_string();
+        for i in self.gramatica.terminais.to_owned() {
+            string1 = format!("{}| {} ", string1, i);
+            string2 = format!("{}|---", string2);
+        }
+        string1 = format!("{}| $ ", string1);
+        string2 = format!("{}|---", string2);
+        for i in self.gramatica.nao_terminais.to_owned() {
+            if i != "S'" {
+                string1 = format!("{}| {} ", string1, i);
+                string2 = format!("{}|---", string2);
+            }
+        }
+        return format!("{}|\n{}|\n", string1, string2);
+    }
+
+    fn gera_tabela_md(&self) {
+        println!("{}", self.cabecalho_md());
+        let mut string: String = "| ".to_string();
+        let mut contador: usize = 0;
+        for i in self.estados.to_owned() {
+            string = format!("| I{} | ", contador);
+            for j in self.gramatica.terminais.to_owned() {
+                if i.transicoes.iter().any(|t| self.transicoes[*t].simbolo == j ) {
+                    if let Some(transicao) = self.transicoes.iter().enumerate().find(|(_, t)| t.simbolo == j) {
+                        string = format!("{} ```E{}``` | ", string, self.obtem_destino(transicao.1.clone()));
+                    } else {
+                        string = format!("{}  | ", string);
+                    }
+                }
+            }
+            string = format!("{}  | ", string);
+            for j in self.gramatica.nao_terminais.to_owned() {
+                if j != "S'" {
+                    if let Some(transicao) = self.transicoes.iter().enumerate().find(|(_, t)| t.simbolo == j) {
+                        string = format!("{} ```{}``` | ", string, self.obtem_destino(transicao.1.clone()));
+                    } else {
+                        string = format!("{}  | ", string);
+                    }
+                }
+            }
+            println!("{}", format!("{}\n", string));
+            contador += 1;
         }
     }
 }
