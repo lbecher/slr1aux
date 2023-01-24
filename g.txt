@@ -13,8 +13,8 @@ G -> IdDeVariavel PontoEVirgula
 G -> IdDeVariavel Virgula G
 H -> I
 H -> I H
-I -> AbreBlocoINZ IdDeVariavel DoisPontos H FechaBlocoINZ
-I -> AbreBlocoWNZ IdDeVariavel DoisPontos H FechaBlocoWNZ
+I -> AbreBlocoINZ M DoisPontos H FechaBlocoINZ
+I -> AbreBlocoWNZ M DoisPontos H FechaBlocoWNZ
 I -> AbreBlocoRUI IdDeVariavel Virgula M Virgula M DoisPontos H FechaBlocoRUI
 I -> Bloc DoisPontos IdDeBloco PontoEVirgula
 I -> Set DoisPontos IdDeVariavel Virgula K

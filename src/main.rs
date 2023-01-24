@@ -2,6 +2,8 @@ use std::env;
 use std::fs::File;
 use std::io::prelude::*;
 
+use simple_matrix::Matrix;
+
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 struct ItemLR {
     producao: usize,
@@ -15,10 +17,17 @@ struct RegraDeProducao {
 }
 
 #[derive(Debug, Clone)]
+struct Seguinte {
+    nao_terminal: String,
+    terminais: Vec<String>,
+}
+
+#[derive(Debug, Clone)]
 struct Gramatica {
     regras: Vec<RegraDeProducao>,
     nao_terminais: Vec<String>,
     terminais: Vec<String>,
+    seguintes: Vec<Seguinte>
 }
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
@@ -48,29 +57,41 @@ fn main() {
     let argumentos: Vec<String> = env::args()
         .collect();
 
-    // abre arquivo
-    let mut arquivo = File::open(argumentos.get(1).unwrap())
+    // abre arquivos
+    let mut arquivo_gramatica = File::open(argumentos.get(1).unwrap())
+        .unwrap();
+    let mut arquivo_seguintes = File::open(argumentos.get(2).unwrap())
         .unwrap();
     
-    // variável para armazenar o conteúdo do arquivo
-    let mut conteudo_arquivo = String::new();
+    // variáveis para armazenar os conteúdos dos arquivos
+    let mut conteudo_arquivo_gramatica = String::new();
+    let mut conteudo_arquivo_seguintes = String::new();
 
-    // lê o conteúdo do arquivo
-    arquivo.read_to_string(&mut conteudo_arquivo)
+    // lê o conteúdo dos arquivos
+    arquivo_gramatica.read_to_string(&mut conteudo_arquivo_gramatica)
+        .unwrap();
+    arquivo_seguintes.read_to_string(&mut conteudo_arquivo_seguintes)
         .unwrap();
     
     // separa conteúdo em linhas
-    let linhas_arquivo: Vec<&str> = conteudo_arquivo
+    let linhas_arquivo_gramatica: Vec<&str> = conteudo_arquivo_gramatica
         .split("\n")
         .collect();
+    let linhas_arquivo_seguintes: Vec<&str> = conteudo_arquivo_gramatica
+        .split("\n")
+        .collect();
+    
+    // obtem seguintes
+    let seguintes = obtem_seguintes(linhas_arquivo_seguintes);
 
     // obtem gramática
-    let regras = obtem_regras_de_producao(linhas_arquivo);
+    let regras = obtem_regras_de_producao(linhas_arquivo_gramatica);
     let nao_terminais = obtem_nao_terminais(regras.to_owned());
     let gramatica = Gramatica {
         regras: regras.to_owned(),
         nao_terminais: nao_terminais.to_owned(),
         terminais: obtem_terminais(regras, nao_terminais),
+        seguintes: seguintes,
     };
 
     // gera o autômato
@@ -129,6 +150,44 @@ fn obtem_terminais(regras_de_producao: Vec<RegraDeProducao>, nao_terminais: Vec<
     }
     return terminais;
 }
+
+fn obtem_seguintes(linhas_arquivo: Vec<&str>) -> Vec<Seguinte> {
+    let mut seguintes: Vec<Seguinte> = Vec::new();
+
+    // lê linha por linha para obter os seguintes
+    for linha in linhas_arquivo {
+        let split_flecha: Vec<&str> = linha
+            .split(" : ")
+            .collect();
+        if split_flecha.len() > 1 {
+            let split_espaco: Vec<&str> = split_flecha[1]
+                .split(" ")
+                .collect();
+            
+            let seguinte = Seguinte {
+                nao_terminal: split_flecha[0].to_string(),
+                terminais: split_espaco
+                    .iter()
+                    .map(|s| s.to_string())
+                    .collect(),
+            };
+
+            // armazena resultados nos vetores
+            seguintes.push(seguinte);
+        } else {
+            let seguinte = Seguinte {
+                nao_terminal: split_flecha[0].to_string(),
+                terminais: Vec::new(),
+            };
+
+            // armazena resultados nos vetores
+            seguintes.push(seguinte);
+        }
+    }
+
+    return seguintes;
+}
+
 
 impl Automato {
     fn inicializa(gramatica: Gramatica) -> Self {
@@ -312,32 +371,79 @@ impl Automato {
     }
 
     fn gera_tabela_md(&self) {
-        println!("{}", self.cabecalho_md());
-        let mut string: String = "| ".to_string();
+        let tabela = self.gera_tabela();
+
+        let mut string: String = self.cabecalho_md();
         let mut contador: usize = 0;
-        for i in self.estados.to_owned() {
-            string = format!("| I{} | ", contador);
-            for j in self.gramatica.terminais.to_owned() {
-                if i.transicoes.iter().any(|t| self.transicoes[*t].simbolo == j ) {
-                    if let Some(transicao) = self.transicoes.iter().enumerate().find(|(_, t)| t.simbolo == j) {
-                        string = format!("{} ```E{}``` | ", string, self.obtem_destino(transicao.1.clone()));
-                    } else {
-                        string = format!("{}  | ", string);
-                    }
+
+        for i in 0..self.estados.len() {
+            string += format!("| I{} | ", contador).as_ref();
+            for j in 0..(self.gramatica.terminais.len() + self.gramatica.nao_terminais.len()) {
+                let celula = tabela.get(i, j).unwrap();
+                if celula.len() > 1 {
+                    string += format!("```{}``` | ", celula).as_ref();
+                } else {
+                    string += "  | ";
                 }
             }
-            string = format!("{}  | ", string);
-            for j in self.gramatica.nao_terminais.to_owned() {
-                if j != "S'" {
-                    if let Some(transicao) = self.transicoes.iter().enumerate().find(|(_, t)| t.simbolo == j) {
-                        string = format!("{} ```{}``` | ", string, self.obtem_destino(transicao.1.clone()));
-                    } else {
-                        string = format!("{}  | ", string);
-                    }
-                }
-            }
-            println!("{}", format!("{}\n", string));
+            string += "\n";
             contador += 1;
         }
+
+        println!("{}", string);
+    }
+
+    fn gera_tabela(&self) -> Matrix<String> {
+        let mut tabela: Matrix<String> = Matrix::new(
+            self.estados.len(),
+            self.gramatica.terminais.len() + self.gramatica.nao_terminais.len(),
+        );
+
+        for i in 0..self.estados.len() {
+            let estado = self.estados[i].clone();
+            for j in 0..self.gramatica.terminais.len() {
+                let terminal = self.gramatica.terminais[j].clone();
+                if estado.transicoes.iter().any(|t| self.transicoes[*t].simbolo == terminal) {
+                    if let Some(transicao) = self.transicoes
+                        .iter()
+                        .enumerate()
+                        .find(|(_, t)| t.simbolo == terminal)
+                    {
+                        tabela.set(i, j, format!("E{}", self.obtem_destino(transicao.1.clone())));
+                    } else {
+                        tabela.set(i, j, "erro".to_string());
+                    }
+                } else {
+                    if let Some(seguinte) = self.gramatica.seguintes
+                        .iter()
+                        .enumerate()
+                        .find(|(_, s)| s.nao_terminal == terminal)
+                    {
+                        tabela.set(i, j, format!("R{}", seguinte.0));
+                    } else {
+                        tabela.set(i, j, "erro".to_string());
+                    }
+                }
+            }
+            for j in 0..self.gramatica.nao_terminais.len() {
+                let nao_terminal = self.gramatica.nao_terminais[j].clone();
+                if nao_terminal != "S'" {
+                    if estado.transicoes.iter().any(|t| self.transicoes[*t].simbolo == nao_terminal) {
+                        if let Some(transicao) = self.transicoes
+                            .iter()
+                            .enumerate()
+                            .find(|(_, t)| t.simbolo == nao_terminal)
+                        {
+                            tabela.set(i, j + self.gramatica.terminais.len(), format!("{}", self.obtem_destino(transicao.1.clone())));
+                        } else {
+                            tabela.set(i, j + self.gramatica.terminais.len(), " ".to_string());
+                        }
+                    } else {
+                        tabela.set(i, j + self.gramatica.terminais.len(), " ".to_string());
+                    }
+                }
+            }
+        }
+        return tabela;
     }
 }
