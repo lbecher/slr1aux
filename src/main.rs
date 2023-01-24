@@ -380,7 +380,7 @@ impl Automato {
             string += format!("| I{} | ", contador).as_ref();
             for j in 0..(self.gramatica.terminais.len() + self.gramatica.nao_terminais.len()) {
                 let celula = tabela.get(i, j).unwrap();
-                if celula.len() > 1 {
+                if celula != " " {
                     string += format!("```{}``` | ", celula).as_ref();
                 } else {
                     string += "  | ";
@@ -401,6 +401,8 @@ impl Automato {
 
         for i in 0..self.estados.len() {
             let estado = self.estados[i].clone();
+
+            // colunas dos terminais
             for j in 0..self.gramatica.terminais.len() {
                 let terminal = self.gramatica.terminais[j].clone();
                 if estado.transicoes.iter().any(|t| self.transicoes[*t].simbolo == terminal) {
@@ -414,30 +416,68 @@ impl Automato {
                         tabela.set(i, j, "erro".to_string());
                     }
                 } else {
-                    if let Some(seguinte) = self.gramatica.seguintes
-                        .iter()
-                        .enumerate()
-                        .find(|(_, s)| s.nao_terminal == terminal)
-                    {
-                        tabela.set(i, j, format!("R{}", seguinte.0));
-                    } else {
-                        tabela.set(i, j, "erro".to_string());
+                    // caso contrário, verifica se há um item LR em estado final sobre outros não terminais
+                    // neste caso, redução
+                    if let Some(itemlr) = estado.itens.iter().enumerate().find(|(_, i)|
+                        (self.gramatica.regras[i.producao].producao.len() == i.posicao_do_ponto)
+                    ) {
+                        let producao = itemlr.1.clone().producao;
+                        let simbolo = self.gramatica.regras[producao].nao_terminal.clone();
+                        if let Some(transicao) = estado.transicoes.iter().enumerate().find(|(_, t)|
+                            (self.transicoes[**t].simbolo == simbolo)
+                        ) {
+                            tabela.set(i, j, format!("R{}", self.obtem_destino(self.transicoes[*transicao.1].clone())));
+                        } else {
+                            tabela.set(i, j, "erro".to_string());
+                        }
+                    }
+                    // erro para os demais casos
+                    else {
+                        tabela.set(i, self.gramatica.terminais.len(), "erro".to_string());
                     }
                 }
             }
+            
+            // coluna do $
+            // verifica se há um item LR em estado final sobre S'
+            // neste caso, aceita
+            if estado.itens.iter().any(|i| 
+                (self.gramatica.regras[i.producao].nao_terminal == "S'") &&
+                (self.gramatica.regras[i.producao].producao.len() == i.posicao_do_ponto)
+            ) {
+                tabela.set(i, self.gramatica.terminais.len(), "ACEITAR".to_string());
+            }
+            // caso contrário, verifica se há um item LR em estado final sobre outros não terminais
+            // neste caso, redução
+            else if let Some(itemlr) = estado.itens.iter().enumerate().find(|(_, i)|
+                (self.gramatica.regras[i.producao].producao.len() == i.posicao_do_ponto)
+            ) {
+                let producao = itemlr.1.clone().producao;
+                let simbolo = self.gramatica.regras[producao].nao_terminal.clone();
+                if let Some(transicao) = estado.transicoes.iter().enumerate().find(|(_, t)|
+                    (self.transicoes[**t].simbolo == simbolo)
+                ) {
+                    tabela.set(i, self.gramatica.terminais.len(), format!("R{}", self.obtem_destino(self.transicoes[*transicao.1].clone())));
+                } else {
+                    tabela.set(i, self.gramatica.terminais.len(), "erro".to_string());
+                }
+            }
+            // erro para os demais casos
+            else {
+                tabela.set(i, self.gramatica.terminais.len(), "erro".to_string());
+            }
+
+            // colunas dos não terminais
             for j in 0..self.gramatica.nao_terminais.len() {
                 let nao_terminal = self.gramatica.nao_terminais[j].clone();
                 if nao_terminal != "S'" {
-                    if estado.transicoes.iter().any(|t| self.transicoes[*t].simbolo == nao_terminal) {
-                        if let Some(transicao) = self.transicoes
-                            .iter()
-                            .enumerate()
-                            .find(|(_, t)| t.simbolo == nao_terminal)
-                        {
-                            tabela.set(i, j + self.gramatica.terminais.len(), format!("{}", self.obtem_destino(transicao.1.clone())));
-                        } else {
-                            tabela.set(i, j + self.gramatica.terminais.len(), " ".to_string());
-                        }
+                    if let Some(transicao) = estado.transicoes
+                        .iter()
+                        .enumerate()
+                        .find(|(_, t)| self.transicoes[**t].simbolo == nao_terminal)
+                    {
+                        println!("Aqui");
+                        tabela.set(i, j + self.gramatica.terminais.len(), format!("{}", self.obtem_destino(self.transicoes[*transicao.1].clone())));
                     } else {
                         tabela.set(i, j + self.gramatica.terminais.len(), " ".to_string());
                     }
