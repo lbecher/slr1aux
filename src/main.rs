@@ -416,24 +416,24 @@ impl Automato {
                         tabela.set(i, j, "erro".to_string());
                     }
                 } else {
-                    // caso contrário, verifica se há um item LR em estado final sobre outros não terminais
+                    // caso contrário, verifica se há um item LR em estado final sobre não terminais
                     // neste caso, redução
                     if let Some(itemlr) = estado.itens.iter().enumerate().find(|(_, i)|
                         (self.gramatica.regras[i.producao].producao.len() == i.posicao_do_ponto)
                     ) {
-                        let producao = itemlr.1.clone().producao;
-                        let simbolo = self.gramatica.regras[producao].nao_terminal.clone();
-                        if let Some(transicao) = estado.transicoes.iter().enumerate().find(|(_, t)|
-                            (self.transicoes[**t].simbolo == simbolo)
-                        ) {
-                            tabela.set(i, j, format!("R{}", self.obtem_destino(self.transicoes[*transicao.1].clone())));
+                        let producao = self.gramatica.regras[itemlr.1.producao].producao.to_vec();
+                        let regra = self.gramatica.regras.iter().enumerate().find(|(_, r)|
+                            r.producao == producao
+                        ).unwrap().0;
+                        if regra > 0 {
+                            tabela.set(i, j, format!("R{}", regra));
                         } else {
                             tabela.set(i, j, "erro".to_string());
                         }
                     }
                     // erro para os demais casos
                     else {
-                        tabela.set(i, self.gramatica.terminais.len(), "erro".to_string());
+                        tabela.set(i, j, "erro".to_string());
                     }
                 }
             }
@@ -452,14 +452,14 @@ impl Automato {
             else if let Some(itemlr) = estado.itens.iter().enumerate().find(|(_, i)|
                 (self.gramatica.regras[i.producao].producao.len() == i.posicao_do_ponto)
             ) {
-                let producao = itemlr.1.clone().producao;
-                let simbolo = self.gramatica.regras[producao].nao_terminal.clone();
-                if let Some(transicao) = estado.transicoes.iter().enumerate().find(|(_, t)|
-                    (self.transicoes[**t].simbolo == simbolo)
-                ) {
-                    tabela.set(i, self.gramatica.terminais.len(), format!("R{}", self.obtem_destino(self.transicoes[*transicao.1].clone())));
+                let producao = self.gramatica.regras[itemlr.1.producao].producao.to_vec();
+                let regra = self.gramatica.regras.iter().enumerate().find(|(_, r)|
+                    r.producao == producao
+                ).unwrap().0;
+                if regra > 0 {
+                    tabela.set(i, self.gramatica.nao_terminais.len(), format!("R{}", regra));
                 } else {
-                    tabela.set(i, self.gramatica.terminais.len(), "erro".to_string());
+                    tabela.set(i, self.gramatica.nao_terminais.len(), "erro".to_string());
                 }
             }
             // erro para os demais casos
@@ -476,7 +476,6 @@ impl Automato {
                         .enumerate()
                         .find(|(_, t)| self.transicoes[**t].simbolo == nao_terminal)
                     {
-                        println!("Aqui");
                         tabela.set(i, j + self.gramatica.terminais.len(), format!("{}", self.obtem_destino(self.transicoes[*transicao.1].clone())));
                     } else {
                         tabela.set(i, j + self.gramatica.terminais.len(), " ".to_string());
