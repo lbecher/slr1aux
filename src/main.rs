@@ -17,30 +17,21 @@ struct RegraDeProducao {
 }
 
 #[derive(Debug, Clone)]
-struct Seguinte {
-    nao_terminal: String,
-    terminais: Vec<String>,
-}
-
-#[derive(Debug, Clone)]
 struct Gramatica {
     regras: Vec<RegraDeProducao>,
     nao_terminais: Vec<String>,
     terminais: Vec<String>,
-    seguintes: Vec<Seguinte>
 }
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 struct Transicao {
-    posicao: usize,
     simbolo: String,
-    producoes: Vec<usize>,
+    itens: Vec<ItemLR>,
 }
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 struct Estado {
-    producoes_iniciais: Vec<usize>,
-    posicao_do_ponto: usize,
+    itens_iniciais: Vec<ItemLR>,
     itens: Vec<ItemLR>,
     transicoes: Vec<usize>,
 }
@@ -60,29 +51,18 @@ fn main() {
     // abre arquivos
     let mut arquivo_gramatica = File::open(argumentos.get(1).unwrap())
         .unwrap();
-    let mut arquivo_seguintes = File::open(argumentos.get(2).unwrap())
-        .unwrap();
     
     // variáveis para armazenar os conteúdos dos arquivos
     let mut conteudo_arquivo_gramatica = String::new();
-    let mut conteudo_arquivo_seguintes = String::new();
 
     // lê o conteúdo dos arquivos
     arquivo_gramatica.read_to_string(&mut conteudo_arquivo_gramatica)
-        .unwrap();
-    arquivo_seguintes.read_to_string(&mut conteudo_arquivo_seguintes)
         .unwrap();
     
     // separa conteúdo em linhas
     let linhas_arquivo_gramatica: Vec<&str> = conteudo_arquivo_gramatica
         .split("\n")
         .collect();
-    let linhas_arquivo_seguintes: Vec<&str> = conteudo_arquivo_gramatica
-        .split("\n")
-        .collect();
-    
-    // obtem seguintes
-    let seguintes = obtem_seguintes(linhas_arquivo_seguintes);
 
     // obtem gramática
     let regras = obtem_regras_de_producao(linhas_arquivo_gramatica);
@@ -91,7 +71,6 @@ fn main() {
         regras: regras.to_owned(),
         nao_terminais: nao_terminais.to_owned(),
         terminais: obtem_terminais(regras, nao_terminais),
-        seguintes: seguintes,
     };
 
     // gera o autômato
@@ -151,44 +130,6 @@ fn obtem_terminais(regras_de_producao: Vec<RegraDeProducao>, nao_terminais: Vec<
     return terminais;
 }
 
-fn obtem_seguintes(linhas_arquivo: Vec<&str>) -> Vec<Seguinte> {
-    let mut seguintes: Vec<Seguinte> = Vec::new();
-
-    // lê linha por linha para obter os seguintes
-    for linha in linhas_arquivo {
-        let split_flecha: Vec<&str> = linha
-            .split(" : ")
-            .collect();
-        if split_flecha.len() > 1 {
-            let split_espaco: Vec<&str> = split_flecha[1]
-                .split(" ")
-                .collect();
-            
-            let seguinte = Seguinte {
-                nao_terminal: split_flecha[0].to_string(),
-                terminais: split_espaco
-                    .iter()
-                    .map(|s| s.to_string())
-                    .collect(),
-            };
-
-            // armazena resultados nos vetores
-            seguintes.push(seguinte);
-        } else {
-            let seguinte = Seguinte {
-                nao_terminal: split_flecha[0].to_string(),
-                terminais: Vec::new(),
-            };
-
-            // armazena resultados nos vetores
-            seguintes.push(seguinte);
-        }
-    }
-
-    return seguintes;
-}
-
-
 impl Automato {
     fn inicializa(gramatica: Gramatica) -> Self {
         Automato {
@@ -198,24 +139,21 @@ impl Automato {
         }
     }
 
-    fn converte_para_item(&mut self, producao: usize, posicao_do_ponto: usize) -> ItemLR {
-        ItemLR {
-            producao: producao,
-            posicao_do_ponto: posicao_do_ponto,
-        }
-    }
-
     fn analiza(&mut self) {
-        self.gera_estado(vec![0], 0);
+        let item_inicial = ItemLR {
+            producao: 0,
+            posicao_do_ponto: 0,
+        };
+        self.gera_estado(vec![item_inicial]);
     }
 
-    fn gera_estado(&mut self, producoes_iniciais: Vec<usize>, posicao_do_ponto: usize) {
+    fn gera_estado(&mut self, itens_iniciais: Vec<ItemLR>) {
         let mut itens: Vec<ItemLR> = Vec::new();
         let mut transicoes: Vec<Transicao> = Vec::new();
 
         // adiciona as produções iniciais ao vetor de itens
-        for producao in producoes_iniciais.to_owned() {
-            itens.push(self.converte_para_item(producao, posicao_do_ponto));
+        for item in itens_iniciais.to_owned() {
+            itens.push(item.clone());
         }
 
         // adiciona os desvios ao vetor de itens
@@ -241,8 +179,7 @@ impl Automato {
                 }
                 let transicao = Transicao {
                     simbolo: simbolo_marcado,
-                    posicao: item.posicao_do_ponto,
-                    producoes: vec![item.producao],
+                    itens: vec![item],
                 };
                 if !transicoes.iter().any(|v| *v == transicao.to_owned()) {
                     transicoes.push(transicao);
@@ -260,9 +197,9 @@ impl Automato {
             outro_contador = contador + 1;
             while outro_contador < tamanho_vetor_transicoes {
                 if transicoes[contador].simbolo == transicoes[outro_contador].simbolo {
-                    let producao = transicoes[outro_contador].producoes[0];
+                    let item = transicoes[outro_contador].itens[0].clone();
                     transicoes.remove(outro_contador);
-                    transicoes[contador].producoes.push(producao);
+                    transicoes[contador].itens.push(item);
                 }
                 outro_contador += 1;
                 tamanho_vetor_transicoes = transicoes.len();
@@ -277,7 +214,9 @@ impl Automato {
         contador = 0;
         for i in 0..transicoes.len() {
             let transicao = transicoes[i].clone();
-            if let Some(index) = self.transicoes.iter().enumerate().find(|(_, t)| t.simbolo == transicao.simbolo && t.posicao == transicao.posicao && t.producoes == transicao.producoes) {
+            if let Some(index) = self.transicoes.iter().enumerate().find(|(_, t)| 
+                (**t == transicao)
+            ) {
                 transicoes_index.push(index.0);
             } else {
                 transicoes_index.push(self.transicoes.len());
@@ -288,25 +227,34 @@ impl Automato {
 
         // registra estado
         let estado = Estado {
-            producoes_iniciais: producoes_iniciais,
-            posicao_do_ponto: posicao_do_ponto,
+            itens_iniciais: itens_iniciais,
             itens: itens,
             transicoes: transicoes_index.to_vec(),
         };
         self.estados.push(estado);
 
         // gera estados sobre novas transições
-        for transicao in transicoes_index.to_vec() {
+        for transicao in transicoes_index.to_owned() {
             if transicao >= transicoes_tamanho_anterior {
-                self.gera_estado(self.transicoes[transicao].producoes.to_vec(), self.transicoes[transicao].posicao + 1);
+                let mut itens_da_trasicao: Vec<ItemLR> = Vec::new();
+                for item in self.transicoes[transicao].itens.to_owned() {
+                    itens_da_trasicao.push(item);
+                    let index = itens_da_trasicao.len();
+                    itens_da_trasicao[index - 1].posicao_do_ponto += 1; 
+                }
+                self.gera_estado(itens_da_trasicao);
             }
         }
     }
 
-    fn obtem_destino(&self, transicao: Transicao) -> usize {
+    fn obtem_estado(&self, transicao: Transicao) -> usize {
         let mut destino: usize = 0;
         for i in self.estados.to_vec() {
-            if i.posicao_do_ponto == transicao.posicao + 1 && i.producoes_iniciais == transicao.producoes {
+            let mut itens = transicao.itens.to_vec();
+            for i in 0..itens.len() {
+                itens[i].posicao_do_ponto += 1;
+            }
+            if i.itens_iniciais == itens {
                 break;
             }
             destino += 1;
@@ -348,7 +296,11 @@ impl Automato {
 
     fn printa_transicoes(&self, estado: usize) {
         for transicao in self.estados[estado].transicoes.to_vec() {
-            println!("δ(I{}, {}) = I{}", estado, self.transicoes[transicao].simbolo, self.obtem_destino(self.transicoes[transicao].clone()));
+            println!("δ(I{}, {}) = I{}", 
+                estado,
+                self.transicoes[transicao].simbolo,
+                self.obtem_estado(self.transicoes[transicao].clone())
+            );
         }
     }
 
@@ -411,7 +363,7 @@ impl Automato {
                         .enumerate()
                         .find(|(_, t)| t.simbolo == terminal)
                     {
-                        tabela.set(i, j, format!("E{}", self.obtem_destino(transicao.1.clone())));
+                        tabela.set(i, j, format!("E{}", self.obtem_estado(transicao.1.to_owned())));
                     } else {
                         tabela.set(i, j, "erro".to_string());
                     }
@@ -457,9 +409,9 @@ impl Automato {
                     r.producao == producao
                 ).unwrap().0;
                 if regra > 0 {
-                    tabela.set(i, self.gramatica.nao_terminais.len(), format!("R{}", regra));
+                    tabela.set(i, self.gramatica.terminais.len(), format!("R{}", regra));
                 } else {
-                    tabela.set(i, self.gramatica.nao_terminais.len(), "erro".to_string());
+                    tabela.set(i, self.gramatica.terminais.len(), "erro".to_string());
                 }
             }
             // erro para os demais casos
@@ -476,7 +428,11 @@ impl Automato {
                         .enumerate()
                         .find(|(_, t)| self.transicoes[**t].simbolo == nao_terminal)
                     {
-                        tabela.set(i, j + self.gramatica.terminais.len(), format!("{}", self.obtem_destino(self.transicoes[*transicao.1].clone())));
+                        tabela.set(
+                            i,
+                            j + self.gramatica.terminais.len(),
+                            format!("{}", self.obtem_estado(self.transicoes[*transicao.1].to_owned()))
+                        );
                     } else {
                         tabela.set(i, j + self.gramatica.terminais.len(), " ".to_string());
                     }
