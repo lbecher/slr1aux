@@ -77,7 +77,7 @@ fn main() {
     let mut automato = Automato::inicializa(gramatica);
     automato.analiza();
     automato.resultado();
-    automato.gera_tabela_md();
+    automato.gera_tabela_rust();
 }
 
 fn obtem_regras_de_producao(linhas_arquivo: Vec<&str>) -> Vec<RegraDeProducao> {
@@ -345,6 +345,78 @@ impl Automato {
         println!("{}", string);
     }
 
+    fn gera_tabela_rust(&self) {
+        let tabela = self.gera_tabela();
+
+        let mut string: String = String::new();
+        let mut contador: usize = 0;
+
+        string += "let producoes = vec![\n";
+        for i in self.gramatica.regras.to_owned() {
+            string += format!("    (NaoTerminais::{}, {} as usize),\n", i.nao_terminal, i.producao.len()).as_ref();
+        }
+        string += "];\n";
+
+        for i in 0..self.estados.len() {
+            string += format!("            {} => {{\n", contador).as_ref();
+            let mut condicoes: usize = 0;
+            for j in 0..(self.gramatica.terminais.len() + self.gramatica.nao_terminais.len()) {
+                let mut celula = tabela.get(i, j).unwrap().clone();
+                if j < self.gramatica.terminais.len() {
+                    if celula != "erro" {
+                        if condicoes != 0 {
+                            string += "                } else if ";
+                        } else {
+                            string += "                if ";
+                        }
+                        string += format!("let ElementosDaPilha::Tokens(Tokens::{}) = simbolo {{\n", self.gramatica.terminais[j]).as_ref();
+                        if celula.contains("I") {
+                            celula.remove(0);
+                            string += format!("                    return Ok(Acoes::Empilha({}));\n", celula).as_ref();
+                        } else {
+                            celula.remove(0);
+                            string += format!("                    return Ok(Acoes::Reduz({}));\n", celula).as_ref();
+                        }
+                        condicoes += 1;
+                    }
+                } else if j == self.gramatica.terminais.len() {
+                    if celula != "erro" {
+                        if condicoes != 0 {
+                            string += "                } else if ";
+                        } else {
+                            string += "                if ";
+                        }
+                        string += "let ElementosDaPilha::Tokens(Tokens::Fim) = simbolol {\n";
+                        if celula.contains("ACEITAR") {
+                            string += "                    return Ok(Acoes::Aceita);\n";
+                        } else {
+                            celula.remove(0);
+                            string += format!("                    return Ok(Acoes::Reduz({}));\n", celula).as_ref();
+                        }
+                        condicoes += 1;
+                    }
+                } else {
+                    if celula != " " {
+                        if condicoes != 0 {
+                            string += "                } else if ";
+                        } else {
+                            string += "                if ";
+                        }
+                        string += format!("let ElementosDaPilha::NaoTerminais(NaoTerminais::{}) = simbolo {{\n", self.gramatica.nao_terminais[j - self.gramatica.terminais.len()]).as_ref();
+                        string += format!("                    return Ok(Acoes::VaiPara({}));\n", celula).as_ref();
+                        condicoes += 1;
+                    }
+                }
+            }
+            string += "                } else {\n                    return Ok(Acoes::Erro);\n                }\n            },\n";
+            contador += 1;
+        }
+
+        string += "            _ => {\n                return Err(());\n            },\n";
+
+        println!("{}", string);
+    }
+
     fn gera_tabela(&self) -> Matrix<String> {
         let mut tabela: Matrix<String> = Matrix::new(
             self.estados.len(),
@@ -363,7 +435,7 @@ impl Automato {
                         .enumerate()
                         .find(|(_, t)| t.simbolo == terminal)
                     {
-                        tabela.set(i, j, format!("E{}", self.obtem_estado(transicao.1.to_owned())));
+                        tabela.set(i, j, format!("I{}", self.obtem_estado(transicao.1.to_owned())));
                     } else {
                         tabela.set(i, j, "erro".to_string());
                     }

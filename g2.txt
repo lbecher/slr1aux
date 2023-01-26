@@ -1,5 +1,5 @@
 S' -> T
 T -> F
-T -> T * F
-F -> id
-F -> ( T )
+T -> T Mult F
+F -> Id
+F -> AbreP T FechaP

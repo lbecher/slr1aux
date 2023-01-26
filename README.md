@@ -26,7 +26,7 @@ A gramática aceita pelo programa é do tipo Gramática Aumentada e, por isso, e
 | I6 | ```erro``` | ```E5``` | ```E6``` | ```erro``` | ```erro``` | ```7``` | ```4``` | 
 | I7 | ```E2``` | ```erro``` | ```erro``` | ```E8``` | ```erro``` |   |   | 
 | I8 | ```R4``` | ```R4``` | ```R4``` | ```R4``` | ```R4``` |   |   | 
-### Arquivo g1.txt
+### Arquivo g.txt
 | Estado | AbreBlocoDATA | FechaBlocoDATA | AbreBlocoMAIN | FechaBlocoMAIN | AbreBlocoDeCodigo | FechaBlocoDeCodigo | TipoDeVariavel | DoisPontos | IdDeVariavel | PontoEVirgula | Virgula | AbreBlocoINZ | FechaBlocoINZ | AbreBlocoWNZ | FechaBlocoWNZ | AbreBlocoRUI | FechaBlocoRUI | Bloc | IdDeBloco | Set | Print | String | Scan | Caractere | Numero | Operador | AbreParenteses | FechaParenteses | $ | S | A | B | C | D | E | F | G | H | I | J | K | L | M |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | I0 | ```E81``` | ```erro``` | ```erro``` | ```erro``` | ```erro``` | ```erro``` | ```erro``` | ```erro``` | ```erro``` | ```erro``` | ```erro``` | ```erro``` | ```erro``` | ```erro``` | ```erro``` | ```erro``` | ```erro``` | ```erro``` | ```erro``` | ```erro``` | ```erro``` | ```erro``` | ```erro``` | ```erro``` | ```erro``` | ```erro``` | ```erro``` | ```erro``` | ```erro``` | ```1``` | ```2``` |   |   |   |   |   |   |   |   |   |   |   |   | 
