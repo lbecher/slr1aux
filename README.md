@@ -2,7 +2,7 @@
 Ferramenta para gerar automaticamente o automato SLR(1).
 ## Execução
 ```
-cargo run -- caminho/para/o/arquivo/da/gramatica.txt caminho/para/o/arquivo/do/follow.txt
+cargo run -- caminho/para/o/arquivo/da/gramatica.txt
 ```
 ## Formato da gramática
 ```
@@ -13,7 +13,7 @@ F -> id
 F -> ( T )
 ```
 A gramática aceita pelo programa é do tipo Gramática Aumentada e, por isso, estado inicial deve ser sempre S'.
-## Exemplos de tabelas gerada
+## Exemplos de tabelas geradas
 ### Arquivo g2.txt
 | Estado | * | id | ( | ) | $ | T | F |
 |---|---|---|---|---|---|---|---|
