@@ -1,0 +1,39 @@
+S' -> S
+S -> A B
+S -> A B C
+A -> AbreBlocoDATA E FechaBlocoDATA
+B -> AbreBlocoMAIN H FechaBlocoMAIN
+C -> D
+C -> D C
+D -> AbreBlocoDeCodigo(_) H FechaBlocoDeCodigo(_)
+E -> F
+E -> F E
+F -> TipoDeVariavel(_) DoisPontos G
+G -> IdDeVariavel(_) PontoEVirgula
+G -> IdDeVariavel(_) Virgula G
+H -> I
+H -> I H
+I -> AbreBlocoINZ L DoisPontos H FechaBlocoINZ
+I -> AbreBlocoWNZ L DoisPontos H FechaBlocoWNZ
+I -> AbreBlocoRUI IdDeVariavel(_) Virgula L Virgula L DoisPontos H FechaBlocoRUI
+I -> Bloc DoisPontos IdDeBloco(_) PontoEVirgula
+I -> Set DoisPontos IdDeVariavel(_) Virgula J
+I -> Print DoisPontos String(_) PontoEVirgula
+I -> Print DoisPontos String(_) Virgula J
+I -> Scan DoisPontos String(_) Virgula G
+J -> IdDeVariavel(_) PontoEVirgula
+J -> IdDeVariavel(_) Virgula J
+J -> Caractere(_) PontoEVirgula
+J -> Caractere(_) Virgula J
+J -> Numero(_) PontoEVirgula
+J -> Numero(_) Virgula J
+J -> String(_) PontoEVirgula
+J -> String(_) Virgula J
+J -> K PontoEVirgula
+J -> K Virgula J
+K -> Operador(_) AbreParenteses L FechaParenteses
+K -> Operador(_) AbreParenteses L Virgula L FechaParenteses
+L -> K
+L -> IdDeVariavel(_)
+L -> Numero(_)
+L -> Caractere(_)
