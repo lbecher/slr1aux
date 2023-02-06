@@ -486,9 +486,7 @@ impl Automato {
                 .iter()
                 .enumerate()
                 .find(|(_, i)|
-                    (self.gramatica.regras[i.producao].producao.len() == i.posicao_do_ponto) &&
-                    (self.gramatica.regras[i.producao].producao == i.producao) &&
-                    (self.gramatica.regras[i.producao].nao_terminal == i.nao_terminal)
+                    (self.gramatica.regras[i.producao].producao.len() == i.posicao_do_ponto)
             ) {
                 let producao = self.gramatica.regras[itemlr.1.producao].producao.to_vec();
                 let regra = self.gramatica.regras.iter().enumerate().find(|(_, r)|
@@ -520,9 +518,7 @@ impl Automato {
             .iter()
             .enumerate()
             .find(|(_, i)|
-                (self.gramatica.regras[i.producao].producao.len() == i.posicao_do_ponto) &&
-                (self.gramatica.regras[i.producao].producao == i.producao) &&
-                (self.gramatica.regras[i.producao].nao_terminal == i.nao_terminal)
+                (self.gramatica.regras[i.producao].producao.len() == i.posicao_do_ponto)
         ) {
             let producao_tmp = self.gramatica.regras[itemlr.1.producao].producao.to_vec();
             let regra = self.gramatica.regras.iter().enumerate().find(|(_, r)|
