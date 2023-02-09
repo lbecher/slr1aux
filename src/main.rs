@@ -163,18 +163,24 @@ impl Automato {
         // adiciona os desvios ao vetor de itens
         let mut contador: usize = 0;
         let mut tamanho_vetor_itens: usize = itens.len();
+        // se tamanho diferente, mais desvios devem ser analisados
         while contador < tamanho_vetor_itens {
             let item = itens[contador].clone();
+            // se não um item final
             if item.posicao_do_ponto < self.gramatica.regras[item.producao].producao.len() {
                 let simbolo_marcado = self.gramatica.regras[item.producao].producao[item.posicao_do_ponto].to_string();
+                // se o símbolo marcado for um não terminal
                 if self.gramatica.nao_terminais.iter().any(|s| *s == simbolo_marcado) {
+                    // percorre regras de produção
                     for i in 0..self.gramatica.regras.len() {
                         let producao = self.gramatica.regras[i].clone();
+                        // encontra produção com símbolo marcado pelo ponto
                         if producao.nao_terminal == simbolo_marcado {
                             let novo_item = ItemLR {
                                 producao: i,
                                 posicao_do_ponto: 0,
                             };
+                            // se o item ainda não foi adicionado, adiciona
                             if !itens.iter().any(|nl| *nl == novo_item) {
                                 itens.push(novo_item);
                             }
